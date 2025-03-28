@@ -21,6 +21,33 @@ const nodeTypes = {
   enum: ClassNode,
 };
 
+const edgeTypes = {
+  ASSOCIATION: {
+    label: '→ Association',
+    stroke: '#555',
+    strokeWidth: 2,
+    markerEnd: 'arrow'
+  },
+  INHERITANCE: {
+    label: '▷ Inheritance',
+    stroke: '#2563eb',
+    strokeWidth: 2,
+    markerEnd: 'arrowclosed'
+  },
+  COMPOSITION: {
+    label: '◆ Composition',
+    stroke: '#dc2626',
+    strokeWidth: 2,
+    markerEnd: 'diamond'
+  },
+  AGGREGATION: {
+    label: '◇ Aggregation',
+    stroke: '#d97706',
+    strokeWidth: 2,
+    markerEnd: 'diamond'
+  }
+};
+
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
@@ -32,10 +59,29 @@ const DnDFlow = () => {
   const [type] = useDnD();
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionStart, setConnectionStart] = useState(null);
+  const [selectedEdgeType, setSelectedEdgeType] = useState('ASSOCIATION');
+  const [selectedNodeType, setSelectedNodeType] = useState('class');
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    []
+    (params) => {
+      const edgeConfig = edgeTypes[selectedEdgeType] || edgeTypes.ASSOCIATION;
+      const newEdge = {
+        ...params,
+        type: selectedEdgeType,
+        markerEnd: edgeConfig.markerEnd,
+        style: {
+          stroke: edgeConfig.stroke,
+          strokeWidth: edgeConfig.strokeWidth
+        },
+        data: {
+          label: edgeConfig.label
+        }
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
+    [selectedEdgeType, setEdges]
   );
 
   const onDragOver = useCallback((event) => {
@@ -87,24 +133,62 @@ const DnDFlow = () => {
 
   const onNodeClick = useCallback((event, node) => {
     setSelectedNodeId(node.id);
-  }, []);
+    if (isConnecting) {
+      if (!connectionStart) {
+        setConnectionStart(node.id);
+      } else if (connectionStart !== node.id) {
+        const edgeConfig = edgeTypes[selectedEdgeType];
+        const newEdge = {
+          id: `edge_${connectionStart}_${node.id}_${Date.now()}`,
+          source: connectionStart,
+          target: node.id,
+          type: selectedEdgeType,
+          markerEnd: edgeConfig.markerEnd,
+          style: {
+            stroke: edgeConfig.stroke,
+            strokeWidth: edgeConfig.strokeWidth
+          },
+          data: {
+            label: edgeConfig.label
+          }
+        };
+        setEdges((eds) => [...eds, newEdge]);
+        setLastUpdate(Date.now());
+        setIsConnecting(false);
+        setConnectionStart(null);
+      }
+    }
+  }, [isConnecting, connectionStart, selectedEdgeType, setEdges]);
+
+  const onPaneClick = useCallback(() => {
+    if (isConnecting) {
+      setIsConnecting(false);
+      setConnectionStart(null);
+    }
+  }, [isConnecting]);
+
+
 
   return (
-    <div className="dndflow">
-      <div className="reactflow-wrapper" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          fitView
-          style={{ backgroundColor: "#F7F9FB" }}
-        >
+    <div className="dndflow" style={{ display: 'flex', height: '100vh' }}>
+      <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
+      <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onNodeClick={onNodeClick}
+      onPaneClick={onPaneClick}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      connectionMode="strict"
+      fitView
+      style={{ backgroundColor: "#F7F9FB" }}
+      nodesDraggable={!isConnecting}
+      >
           <Controls />
           <Background />
         </ReactFlow>
@@ -112,9 +196,20 @@ const DnDFlow = () => {
       <Sidebar 
         nodes={nodes} 
         setNodes={setNodes} 
+        edges={edges}
+        setEdges={setEdges}
         lastUpdate={lastUpdate}
+        setLastUpdate={setLastUpdate}
         selectedNodeId={selectedNodeId}
         deleteSelectedNode={deleteSelectedNode}
+        isConnecting={isConnecting}
+        setIsConnecting={setIsConnecting}
+        selectedEdgeType={selectedEdgeType}
+        setSelectedEdgeType={setSelectedEdgeType}
+        connectionStart={connectionStart}
+        setConnectionStart={setConnectionStart}
+        selectedNodeType={selectedNodeType}
+        setSelectedNodeType={setSelectedNodeType}
       />
     </div>
   );

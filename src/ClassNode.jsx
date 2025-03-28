@@ -1,6 +1,7 @@
 import React from 'react';
+import { Handle } from '@xyflow/react';
 
-const ClassNode = ({ data, type }) => {
+const ClassNode = ({ data, type, id }) => {
   const getTypeColor = () => {
     switch(type) {
       case 'class': return '#FFD700';
@@ -22,6 +23,22 @@ const ClassNode = ({ data, type }) => {
         minWidth: '200px'
       }}
     >
+      {/* Source Handle (right side) */}
+      <Handle 
+        type="source" 
+        position="right" 
+        id={`${id}-source`}
+        style={{ backgroundColor: '#555' }}
+      />
+      
+      {/* Target Handle (left side) */}
+      <Handle 
+        type="target" 
+        position="left" 
+        id={`${id}-target`}
+        style={{ backgroundColor: '#555' }}
+      />
+
       <div className="class-header" style={{ borderBottom: '1px solid #333', marginBottom: '8px' }}>
         <strong>{type.toUpperCase()}:</strong> {data.className || 'Unnamed'}
       </div>
