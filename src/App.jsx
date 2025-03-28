@@ -31,6 +31,7 @@ const DnDFlow = () => {
   const { screenToFlowPosition } = useReactFlow();
   const [type] = useDnD();
   const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -68,10 +69,25 @@ const DnDFlow = () => {
       };
 
       setNodes((nds) => nds.concat(newNode));
-      setLastUpdate(Date.now()); // Trigger JSON update
+      setLastUpdate(Date.now());
     },
     [screenToFlowPosition, type, setNodes]
   );
+
+  const deleteSelectedNode = useCallback(() => {
+    if (!selectedNodeId) return;
+    
+    setNodes((nds) => nds.filter((node) => node.id !== selectedNodeId));
+    setEdges((eds) => eds.filter((edge) => 
+      edge.source !== selectedNodeId && edge.target !== selectedNodeId
+    ));
+    setSelectedNodeId(null);
+    setLastUpdate(Date.now());
+  }, [selectedNodeId, setNodes, setEdges]);
+
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNodeId(node.id);
+  }, []);
 
   return (
     <div className="dndflow">
@@ -84,6 +100,7 @@ const DnDFlow = () => {
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
+          onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           fitView
           style={{ backgroundColor: "#F7F9FB" }}
@@ -95,7 +112,9 @@ const DnDFlow = () => {
       <Sidebar 
         nodes={nodes} 
         setNodes={setNodes} 
-        lastUpdate={lastUpdate} 
+        lastUpdate={lastUpdate}
+        selectedNodeId={selectedNodeId}
+        deleteSelectedNode={deleteSelectedNode}
       />
     </div>
   );

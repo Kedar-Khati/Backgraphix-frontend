@@ -8,7 +8,17 @@ const nodeTypes = [
   { label: 'Enum', value: 'enum', color: '#FFA07A' },
 ];
 
-export default ({ nodes, setNodes, lastUpdate }) => {
+const cleanNodeForExport = (node) => ({
+  id: node.id,
+  type: node.type,
+  data: {
+    className: node.data.className,
+    ...(node.data.attributes && { attributes: node.data.attributes }),
+    ...(node.data.methods && { methods: node.data.methods })
+  }
+});
+
+export default ({ nodes, setNodes, lastUpdate, selectedNodeId, deleteSelectedNode }) => {
   const [_, setType] = useDnD();
   const [jsonValue, setJsonValue] = useState('');
   const [isValidJson, setIsValidJson] = useState(true);
@@ -19,28 +29,47 @@ export default ({ nodes, setNodes, lastUpdate }) => {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // Update JSON when nodes change (excluding positions)
+  // Update JSON when selected node changes
   useEffect(() => {
-    const nodesWithoutPositions = nodes.map(({ position, ...node }) => node);
-    setJsonValue(JSON.stringify(nodesWithoutPositions, null, 2));
-  }, [nodes, lastUpdate]);
+    if (selectedNodeId) {
+      const selectedNode = nodes.find(node => node.id === selectedNodeId);
+      if (selectedNode) {
+        setJsonValue(JSON.stringify(cleanNodeForExport(selectedNode), null, 2));
+      }
+    } else {
+      setJsonValue(''); // Clear when no node selected
+    }
+  }, [selectedNodeId, nodes, lastUpdate]);
 
-  // Handle JSON changes
   const handleJsonChange = (e) => {
     const value = e.target.value;
     setJsonValue(value);
     
+    if (!selectedNodeId) return;
+    
     try {
-      const parsed = JSON.parse(value);
+      const parsedNode = JSON.parse(value);
       setIsValidJson(true);
       
-      // Add default positions if not present
-      const nodesWithPositions = parsed.map((node, index) => ({
-        ...node,
-        position: { x: index * 250, y: 0 } // Default position
-      }));
-      
-      setNodes(nodesWithPositions);
+      setNodes(prevNodes => 
+        prevNodes.map(node => {
+          if (node.id === selectedNodeId) {
+            // Preserve position and visual properties while updating data
+            return {
+              ...node,
+              type: parsedNode.type || node.type,
+              data: {
+                ...node.data,
+                ...parsedNode.data,
+                className: parsedNode.data?.className || node.data.className,
+                attributes: parsedNode.data?.attributes || node.data.attributes,
+                methods: parsedNode.data?.methods || node.data.methods
+              }
+            };
+          }
+          return node;
+        })
+      );
     } catch (err) {
       setIsValidJson(false);
     }
@@ -48,8 +77,15 @@ export default ({ nodes, setNodes, lastUpdate }) => {
 
   return (
     <aside>
+      <div className="sidebar-header">
+        <h3>Website Model Editor</h3>
+        <div className="sidebar-divider"></div>
+      </div>
+
       <div className="node-creation-section">
-        <div className="description">Select node type and drag to canvas</div>
+        <div className="description">
+          Select a node type below and drag it onto the canvas to begin modeling.
+        </div>
         
         <div className="node-type-selector">
           {nodeTypes.map((type) => (
@@ -70,22 +106,43 @@ export default ({ nodes, setNodes, lastUpdate }) => {
           draggable
           style={{ 
             backgroundColor: nodeTypes.find(t => t.value === selectedNodeType).color,
-            marginTop: '10px'
+            margin: '15px 0'
           }}
         >
           {selectedNodeType.toUpperCase()} Node
         </div>
+
+        <button
+          className="delete-btn"
+          onClick={deleteSelectedNode}
+          disabled={!selectedNodeId}
+        >
+          {selectedNodeId ? 'Delete Selected Node' : 'No Node Selected'}
+        </button>
       </div>
 
       <div className="json-editor-container">
-        <h4>Nodes JSON (without positions)</h4>
-        <textarea
-          className={`json-editor ${!isValidJson ? 'invalid' : ''}`}
-          value={jsonValue}
-          onChange={handleJsonChange}
-          spellCheck="false"
-        />
-        {!isValidJson && <div className="json-error">Invalid JSON</div>}
+        <h4>Selected Node Definition (JSON)</h4>
+        {selectedNodeId ? (
+          <>
+            <textarea
+              className={`json-editor ${!isValidJson ? 'invalid' : ''}`}
+              value={jsonValue}
+              onChange={handleJsonChange}
+              spellCheck="false"
+              placeholder="Edit the selected node's JSON..."
+            />
+            {!isValidJson && (
+              <div className="json-error">
+                <i className="error-icon">⚠️</i> Invalid JSON format
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="no-selection-message">
+            Select a node on canvas to edit its properties
+          </div>
+        )}
       </div>
     </aside>
   );
