@@ -1,0 +1,132 @@
+@import url('./xy-theme.css');
+ 
+html,
+body {
+  margin: 0;
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+ 
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+ 
+.dndflow {
+  flex-direction: column;
+  display: flex;
+  height: 100vh; /* 👈 Add this */
+  width: 100vw; /* 👈 Add this */
+}
+
+.reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%; /* 👈 Update this */
+}
+ 
+.dndflow aside {
+  border-right: 1px solid #eee;
+  padding: 15px 10px;
+  font-size: 12px;
+  background: #fcfcfc;
+}
+ 
+.dndflow aside .description {
+  margin-bottom: 10px;
+}
+ 
+.dndflow .dndnode {
+  height: 20px;
+  padding: 4px;
+  border: 1px solid #1a192b;
+  border-radius: 2px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+}
+ 
+.dndflow .dndnode.input {
+  border-color: #0041d0;
+}
+ 
+.dndflow .dndnode.output {
+  border-color: #ff0072;
+}
+ 
+.dndflow .reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%;
+}
+ 
+.dndflow .selectall {
+  margin-top: 10px;
+}
+ 
+@media screen and (min-width: 768px) {
+  .dndflow {
+    flex-direction: row;
+  }
+ 
+  .dndflow aside {
+    width: 20%;
+    max-width: 250px;
+  }
+}
+
+.json-editor-container {
+  margin-top: 20px;
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allows container to shrink */
+}
+
+.json-editor-container h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.json-editor {
+  flex-grow: 1;
+  min-height: 400px;
+  width: 100%;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  box-sizing: border-box;
+  resize: vertical;
+  white-space: pre;
+  overflow: auto;
+}
+
+.json-editor.invalid {
+  border-color: #ff4d4f;
+}
+
+.json-error {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Make the sidebar layout more flexible */
+.dndflow aside {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* Adjust the node creation section */
+.node-creation-section {
+  margin-bottom: 20px;
+}
