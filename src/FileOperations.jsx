@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import CodeGenerator from './CodeGenerator';
 
 export const FileOperations = ({ onSave, onLoad, currentDiagram }) => {
     const fileInputRef = useRef(null);
@@ -63,6 +64,8 @@ export const FileOperations = ({ onSave, onLoad, currentDiagram }) => {
             borderBottom: '1px solid #ddd',
             backgroundColor: '#f8f9fa'
         }}>
+            <CodeGenerator currentDiagram={currentDiagram} />
+
             <button
                 onClick={saveToLocalStorage}
                 style={{
